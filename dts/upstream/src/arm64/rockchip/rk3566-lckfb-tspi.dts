@@ -15,8 +15,8 @@
 	compatible = "lckfb,tspi-rk3566", "rockchip,rk3566";
 
 	aliases {
-		mmc0 = &sdmmc0;
-		mmc1 = &sdhci;
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
 		mmc2 = &sdmmc1;
 	};
 
@@ -588,8 +588,9 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
 	sd-uhs-sdr104;
+	supports-sd;
 	vmmc-supply = <&vcc3v3_sd>;
-	vqmmc-supply = <&vcc_1v8>;
+	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 };
 
@@ -612,7 +613,8 @@
 	status = "okay";
 
 	brcmf: wifi@1 {
-		compatible = "brcm,bcm4329-fmac";
+//		compatible = "brcm,bcm4329-fmac";
+		compatible = "brcm,bcm43455-fmac";
 		reg = <1>;
 		interrupt-parent = <&gpio2>;
 		interrupts = <RK_PB2 IRQ_TYPE_LEVEL_HIGH>;
@@ -628,6 +630,10 @@
 	status = "okay";
 };
 
+&leds {
+	status = "okay";
+};
+
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn &uart1m0_rtsn>;
@@ -635,7 +641,8 @@
 	status = "okay";
 
 	bluetooth: bluetooth {
-		compatible = "brcm,bcm43438-bt";
+//		compatible = "brcm,bcm43438-bt";
+		compatible = "brcm,bcm4345c5";
 		clocks = <&rk809 1>;
 		clock-names = "lpo";
 		max-speed = <3000000>;
