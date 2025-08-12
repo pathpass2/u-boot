@@ -67,7 +67,7 @@ jobs:
             u-boot.itb
             idbloader.img
           body: |
-            适用于rk3566-lckfb-tspi的主线u-boot
+            适用于立创泰山派rk3566-lckfb-tspi的主线u-boot
             tag：  ${{ github.event.inputs.target_tag }}
             u-boot version: ${{ env.u-boot_version }}
           draft: false
