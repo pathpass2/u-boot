@@ -6,11 +6,6 @@ on:
   workflow_dispatch:
 
 
-env:
-  ARCH: arm
-  #src_path: /home/runner/work/u-boot/u-boot
-  src_path: ${{ github.workspace }}/u-boot
-     
 
 jobs:
   build:
@@ -58,8 +53,8 @@ jobs:
           
       - name: build u-boot.itb  idbloader.img
         run: |
-          make ARCH=$ARCH CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
-          make ARCH=$ARCH CROSS_COMPILE=aarch64-none-linux-gnu- ROCKCHIP_TPL=./rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin -j$(nproc)
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- ROCKCHIP_TPL=./rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin -j$(nproc)
           cat spl/u-boot-spl.bin >> idbloader.img
 
       - name: Upload u-boot.itb、idbloader.img
