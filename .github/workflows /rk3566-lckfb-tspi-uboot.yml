@@ -7,8 +7,9 @@ on:
 
 
 env:
-  ARCH: arm64
-  src_path: /home/runner/work/u-boot/u-boot
+  ARCH: arm
+  #src_path: /home/runner/work/u-boot/u-boot
+  src_path: ${{ github.workspace }}/u-boot
      
 
 jobs:
@@ -56,8 +57,8 @@ jobs:
           
       - name: build u-boot.itb  idbloader.img
         run: |
-          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
-          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- ROCKCHIP_TPL=./rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin -j$(nproc)
+          make ARCH=$ARCH CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
+          make ARCH=$ARCH CROSS_COMPILE=aarch64-none-linux-gnu- ROCKCHIP_TPL=./rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin -j$(nproc)
           cat spl/u-boot-spl.bin >> idbloader.img
 
       - name: Upload u-boot.itb、idbloader.img
@@ -66,8 +67,8 @@ jobs:
           tag: ${{ github.ref_name || format('v{0}', env.u-boot_version) }}
           name: "Master u-boot ${{ env.u-boot_version }}"          
           artifacts: |
-            ${{ env.src_path }}/u-boot.itb
-            ${{ env.src_path }}/idbloader.img
+            u-boot.itb
+            idbloader.img
           body: |
             适用于rk3566-lckfb-tspi的主线u-boot
             tag：  ${{ github.event.inputs.target_tag }}
