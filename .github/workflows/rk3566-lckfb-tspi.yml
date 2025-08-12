@@ -38,7 +38,8 @@ jobs:
             libncurses-dev \
             initramfs-tools \
             busybox-static  \
-            python3-pyelftools
+            python3-pyelftools  \
+            libgnutls28-dev
           sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
 
       - name: Setup ARM Toolchain
