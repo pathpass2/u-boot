@@ -1,0 +1,75 @@
+name: Build rk3566-lckfb-tspi-u-boot
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  SRC_PATH: ${{ github.workspace }}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_tag }}
+          submodules: true
+          fetch-depth: 0
+          # 关键：保留文件权限
+          persist-credentials: false
+
+      - name: Fix Script Permissions
+        run: |
+          chmod +x arch/arm/mach-rockchip/make_fit_atf.py
+                        
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            device-tree-compiler \
+            u-boot-tools \
+            libssl-dev \
+            bc \
+            flex \
+            bison \
+            libncurses-dev \
+            initramfs-tools \
+            busybox-static  \
+            python3-pyelftools
+          sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
+
+      - name: Setup ARM Toolchain
+        run: |
+          wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+          tar xf arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+          echo "$(pwd)/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu/bin" >> $GITHUB_PATH
+          
+      - name: get u-boot_version
+        run:  |
+          echo "u-boot_version=$(make -s ubootversion)" >> $GITHUB_ENV
+          
+      - name: build u-boot.itb  idbloader.img
+        run: |
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- ROCKCHIP_TPL=./rkbin/bin/rk35/rk3566_ddr_1056MHz_v1.16.bin -j$(nproc)
+          cat spl/u-boot-spl.bin >> idbloader.img
+
+      - name: Upload u-boot.itb、idbloader.img
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name || format('v{0}', env.u-boot_version) }}
+          name: "Master u-boot ${{ env.u-boot_version }}"          
+          artifacts: |
+            u-boot.itb
+            idbloader.img
+          body: |
+            适用于rk3566-lckfb-tspi的主线u-boot
+            tag：  ${{ github.event.inputs.target_tag }}
+            u-boot version: ${{ env.u-boot_version }}
+          draft: false
+          prerelease: false
+          allowUpdates: true
+          replaceArtifacts: false          
