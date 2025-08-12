@@ -23,8 +23,7 @@ jobs:
 
       - name: Fix Script Permissions
         run: |
-          find . -type f -name "make_fit_atf.py" -exec chmod +x {} \;
-          chmod +x ./tools/make_fit_atf.py
+          chmod +x arch/arm/mach-rockchip/make_fit_atf.py
                         
       - name: Install Dependencies
         run: |
