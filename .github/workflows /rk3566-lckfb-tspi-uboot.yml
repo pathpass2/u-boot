@@ -5,7 +5,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-
+env:
+  SRC_PATH: ${{ github.workspace }}
 
 jobs:
   build:
