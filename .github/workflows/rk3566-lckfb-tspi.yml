@@ -62,7 +62,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name || format('v{0}', env.u-boot_version) }}
-          name: "Master u-boot ${{ env.u-boot_version }}"          
+          name: "u-boot ${{ env.u-boot_version }}"          
           artifacts: |
             u-boot.itb
             idbloader.img
