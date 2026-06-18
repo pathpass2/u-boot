@@ -90,9 +90,6 @@ jobs:
             - **u-boot 版本**: ${{ env.u-boot_version }}
             - **构建时间**: ${{ env.build_date }}
             
-            ### 烧录说明
-            - `idbloader-*.img` → 烧录到 SD卡/eMMC 的 0x00000000 偏移
-            - `u-boot-*.itb` → 烧录到 SD卡/eMMC 的 0x00008000 偏移
             
             ### DDR 固件
             - 使用 `rk3566_ddr_1056MHz_v1.16.bin`
