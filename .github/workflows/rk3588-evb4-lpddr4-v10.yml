@@ -89,9 +89,7 @@ jobs:
             - **u-boot 版本**: ${{ env.u-boot_version }}
             - **构建时间**: ${{ env.build_date }}
             
-            ### 烧录说明
-            - `idbloader-*.img` → 烧录到 SD卡/eMMC 的 0x00000000 偏移
-            - `u-boot-*.itb` → 烧录到 SD卡/eMMC 的 0x00008000 偏移
+
           draft: false
           prerelease: false
           allowUpdates: true
