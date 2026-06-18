@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      target_tag:
+        description: 'Source tag to build (optional)'
+        required: false
+        type: string
 
 env:
   SRC_PATH: ${{ github.workspace }}
@@ -15,16 +20,16 @@ jobs:
       - name: Checkout source tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.target_tag }}
+          ref: ${{ github.event.inputs.target_tag || github.ref }}
           submodules: true
           fetch-depth: 0
-          # 关键：保留文件权限
           persist-credentials: false
 
       - name: Fix Script Permissions
         run: |
           chmod +x arch/arm/mach-rockchip/make_fit_atf.py
-                        
+          chmod +x rk3588-atf-bl31 2>/dev/null || true
+
       - name: Install Dependencies
         run: |
           sudo apt-get update
@@ -37,41 +42,57 @@ jobs:
             bison \
             libncurses-dev \
             initramfs-tools \
-            busybox-static  \
-            python3-pyelftools  \
+            busybox-static \
+            python3-pyelftools \
             libgnutls28-dev
           sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
 
       - name: Setup ARM Toolchain
         run: |
-          wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+          wget -q https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
           tar xf arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
           echo "$(pwd)/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu/bin" >> $GITHUB_PATH
-          
-      - name: get u-boot_version
-        run:  |
-          echo "u-boot_version=$(make -s ubootversion)" >> $GITHUB_ENV
-          echo "release_tag=rk3588-evb4-lpddr4-v10-v$make -s ubootversion)" >> $GITHUB_ENV
-          
-      - name: build u-boot.itb  idbloader.img
+
+      - name: Get u-boot version
+        run: |
+          UBUNTU_VERSION=$(make -s ubootversion 2>/dev/null || echo "unknown")
+          echo "u-boot_version=${UBUNTU_VERSION}" >> $GITHUB_ENV
+          # 修复：正确的命令替换语法
+          echo "release_tag=rk3588-evb4-lpddr4-v10-v${UBUNTU_VERSION}" >> $GITHUB_ENV
+          echo "build_date=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_ENV
+
+      - name: Build u-boot.itb and idbloader.img
         run: |
           make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- rk3588-evb4-lpddr4-v10_defconfig
-          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu-  BL31=./rk3588-atf-bl31 ROCKCHIP_TPL=./rkbin/bin/rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.11.bin -j$(nproc)
-          cat spl/u-boot-spl.bin >> idbloader.img
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- \
+            BL31=./rk3588-atf-bl31 \
+            ROCKCHIP_TPL=./rkbin/bin/rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.11.bin \
+            -j$(nproc)
+          cat spl/u-boot-spl.bin > idbloader.img
+          
+          # 重命名产物以便更好识别
+          cp u-boot.itb u-boot-${release_tag}.itb
+          cp idbloader.img idbloader-${release_tag}.img
 
       - name: Upload u-boot.itb、idbloader.img
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.release_tag }}
-          name: "Master u-boot ${{ env.u-boot_version }}"          
+          name: "rk3588-evb4-lpddr4-v10 u-boot ${{ env.u-boot_version }}"
           artifacts: |
-            u-boot.itb
-            idbloader.img
+            u-boot-*.itb
+            idbloader-*.img
           body: |
-            适用于rk3588-evb4-lpddr4-v10的主线u-boot
-            tag：  ${{ github.event.inputs.target_tag }}
-            u-boot version: ${{ env.u-boot_version }}
+            ## 适用于 rk3588-evb4-lpddr4-v10 的主线 u-boot
+            
+            - **源码 tag**: ${{ github.event.inputs.target_tag || github.sha }}
+            - **u-boot 版本**: ${{ env.u-boot_version }}
+            - **构建时间**: ${{ env.build_date }}
+            
+            ### 烧录说明
+            - `idbloader-*.img` → 烧录到 SD卡/eMMC 的 0x00000000 偏移
+            - `u-boot-*.itb` → 烧录到 SD卡/eMMC 的 0x00008000 偏移
           draft: false
           prerelease: false
           allowUpdates: true
-          replaceArtifacts: false          
+          replacesArtifacts: false  # 修复：正确的参数名
