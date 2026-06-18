@@ -603,6 +603,7 @@ static const struct sunxi_pinctrl_function sun20i_d1_pinctrl_functions[] = {
 	{ "gpio_in",	0 },
 	{ "gpio_out",	1 },
 	{ "i2c0",	4 },	/* PB10-PB11 */
+	{ "i2c3",	3 },	/* PG10-PG11 */
 	{ "mmc0",	2 },	/* PF0-PF5 */
 	{ "mmc1",	2 },	/* PG0-PG5 */
 	{ "mmc2",	3 },	/* PC2-PC7 */
@@ -760,7 +761,7 @@ static const struct sunxi_pinctrl_desc __maybe_unused sun50i_h616_pinctrl_desc =
 };
 
 static const struct sunxi_pinctrl_function sun55i_a523_pinctrl_functions[] = {
-	{ "emac0",	5 },	/* PI0-PI16 */
+	{ "gmac0",	5 },	/* PI0-PI16 */
 	{ "gpio_in",	0 },
 	{ "gpio_out",	1 },
 	{ "mmc0",	2 },	/* PF0-PF5 */

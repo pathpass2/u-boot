@@ -279,7 +279,7 @@ int print_cpuinfo(void)
 	if (!ret) {
 		ret = thermal_get_temp(udev, &temp);
 		if (!ret)
-			printf("CPU current temperature: %dC\n", temp);
+			printf("CPU current temperature: %dC\n", temp / 1000);
 		else
 			debug(" - failed to get CPU current temperature\n");
 	} else {
@@ -384,7 +384,22 @@ static struct mm_region imx8ulp_arm64_mem_map[] = {
 		/* SRAM0 (align with 2M) */
 		.virt = 0x22000000UL,
 		.phys = 0x22000000UL,
-		.size = 0x200000UL,
+		.size = 0x1f000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
+			 PTE_BLOCK_OUTER_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
+		/* SCMI shared memory buffer must be mapped as non-cacheable. */
+		.virt = 0x2201f000UL,
+		.phys = 0x2201f000UL,
+		.size = 0x1000UL,
+		.attrs = PTE_BLOCK_MEMTYPE(MT_DEVICE_NGNRNE) |
+			 PTE_BLOCK_NON_SHARE |
+			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
+	}, {
+		.virt = 0x22020000UL,
+		.phys = 0x22020000UL,
+		.size = 0x1e0000UL,
 		.attrs = PTE_BLOCK_MEMTYPE(MT_NORMAL) |
 			 PTE_BLOCK_OUTER_SHARE |
 			 PTE_BLOCK_PXN | PTE_BLOCK_UXN
@@ -804,6 +819,7 @@ int imx8ulp_dm_post_init(void)
 	return 0;
 }
 EVENT_SPY_SIMPLE(EVT_DM_POST_INIT_F, imx8ulp_dm_post_init);
+EVENT_SPY_SIMPLE(EVT_DM_POST_INIT_R, imx8ulp_dm_post_init);
 
 #if defined(CONFIG_XPL_BUILD)
 __weak void __noreturn jump_to_image(struct spl_image_info *spl_image)

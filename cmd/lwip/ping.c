@@ -35,7 +35,7 @@ static u8_t ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p,
 	struct ping_ctx *ctx = arg;
 	struct icmp_echo_hdr *iecho = ctx->iecho;
 
-	if (addr->addr != ctx->target.addr)
+	if (!ip_addr_eq(addr, &ctx->target))
 		return 0;
 
 	if ((p->tot_len >= (IP_HLEN + sizeof(struct icmp_echo_hdr))) &&
@@ -170,6 +170,7 @@ int do_ping(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	if (net_lwip_dns_resolve(argv[1], &addr))
 		return CMD_RET_USAGE;
 
+	net_try_count = 1;
 restart:
 	if (net_lwip_eth_start() < 0 || ping_loop(eth_get_dev(), &addr) < 0) {
 		if (net_start_again() == 0)

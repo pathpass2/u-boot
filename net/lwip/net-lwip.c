@@ -7,6 +7,7 @@
 #include <dm/device.h>
 #include <dm/uclass.h>
 #include <hexdump.h>
+#include <linux/compiler_attributes.h>
 #include <linux/kernel.h>
 #include <lwip/ip4_addr.h>
 #include <lwip/dns.h>
@@ -27,17 +28,13 @@
 #if defined(CONFIG_API) || defined(CONFIG_EFI_LOADER)
 void (*push_packet)(void *, int len) = 0;
 #endif
-static int net_try_count;
+int net_try_count;
 static int net_restarted;
 int net_restart_wrap;
-static uchar net_pkt_buf[(PKTBUFSRX) * PKTSIZE_ALIGN + PKTALIGN];
-uchar *net_rx_packets[PKTBUFSRX];
-uchar *net_rx_packet;
+static uchar net_pkt_buf[(PKTBUFSRX) * PKTSIZE_ALIGN + PKTALIGN]
+	__aligned(PKTALIGN);
 const u8 net_bcast_ethaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 char *pxelinux_configfile;
-/* Our IP addr (0 = unknown) */
-struct in_addr	net_ip;
-char net_boot_file_name[1024];
 
 static err_t net_lwip_tx(struct netif *netif, struct pbuf *p)
 {
@@ -106,9 +103,9 @@ struct netif *net_lwip_get_netif(void)
 static int get_udev_ipv4_info(struct udevice *dev, ip4_addr_t *ip,
 			      ip4_addr_t *mask, ip4_addr_t *gw)
 {
-	char ipstr[] = "ipaddr\0\0";
-	char maskstr[] = "netmask\0\0";
-	char gwstr[] = "gatewayip\0\0";
+	char ipstr[] = "ipaddr\0\0\0";
+	char maskstr[] = "netmask\0\0\0";
+	char gwstr[] = "gatewayip\0\0\0";
 	int idx = dev_seq(dev);
 	char *env;
 
@@ -147,7 +144,7 @@ static int get_udev_ipv4_info(struct udevice *dev, ip4_addr_t *ip,
  */
 int net_lwip_dns_init(void)
 {
-#if CONFIG_IS_ENABLED(CMD_DNS)
+#if CONFIG_IS_ENABLED(DNS)
 	bool has_server = false;
 	ip_addr_t ns;
 	char *nsenv;
@@ -295,6 +292,7 @@ static struct pbuf *alloc_pbuf_and_copy(uchar *data, int len)
 	/* We allocate a pbuf chain of pbufs from the pool. */
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
 	if (!p) {
+		debug("Failed to allocate pbuf !!!!!\n");
 		LINK_STATS_INC(link.memerr);
 		LINK_STATS_INC(link.drop);
 		return NULL;
@@ -364,7 +362,7 @@ int net_lwip_rx(struct udevice *udev, struct netif *netif)
  */
 int net_lwip_dns_resolve(char *name_or_ip, ip_addr_t *ip)
 {
-#if defined(CONFIG_CMD_DNS)
+#if defined(CONFIG_DNS)
 	char *var = "_dnsres";
 	char *argv[] = { "dns", name_or_ip, var, NULL };
 	int argc = ARRAY_SIZE(argv) - 1;
@@ -373,7 +371,7 @@ int net_lwip_dns_resolve(char *name_or_ip, ip_addr_t *ip)
 	if (ipaddr_aton(name_or_ip, ip))
 		return 0;
 
-#if defined(CONFIG_CMD_DNS)
+#if defined(CONFIG_DNS)
 	if (do_dns(NULL, 0, argc, argv) != CMD_RET_SUCCESS)
 		return -1;
 

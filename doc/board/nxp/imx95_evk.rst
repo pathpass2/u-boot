@@ -25,6 +25,17 @@ Note: srctree is U-Boot source directory
 
    $ wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-ele-imx-2.0.2-89161a8.bin
    $ sh firmware-ele-imx-2.0.2-89161a8.bin --auto-accept
+
+i.MX95 A0 silicon version
+
+.. code-block:: bash
+
+   $ cp firmware-ele-imx-2.0.2-89161a8/mx95a0-ahab-container.img $(srctree)
+
+i.MX95 B0 silicon version
+
+.. code-block:: bash
+
    $ cp firmware-ele-imx-2.0.2-89161a8/mx95b0-ahab-container.img $(srctree)
 
 Get DDR PHY Firmware Images
@@ -37,6 +48,7 @@ Note: srctree is U-Boot source directory
    $ wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-imx-8.28-994fa14.bin
    $ sh firmware-imx-8.28-994fa14.bin --auto-accept
    $ cp firmware-imx-8.28-994fa14/firmware/ddr/synopsys/lpddr5*v202409.bin $(srctree)
+   $ cp firmware-imx-8.28-994fa14/firmware/ddr/synopsys/lpddr4x*v202409.bin $(srctree)
 
 Get and Build OEI Images
 --------------------------------------
@@ -48,16 +60,35 @@ branch: master
 .. code-block:: bash
 
    $ sudo apt -y install make gcc g++-multilib srecord
-   $ wget https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-   $ tar xvf arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
+   $ wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+   $ tar xvf arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
    $ export TOOLS=$PWD
    $ git clone -b master https://github.com/nxp-imx/imx-oei.git
    $ cd imx-oei
-   $ make board=mx95lp5 oei=ddr DEBUG=1
+
+i.MX95 A0 silicon version on 19x19 LPDDR5 EVK
+
+.. code-block:: bash
+
+   $ make board=mx95lp5 oei=ddr DEBUG=1 r=A0 DDR_CONFIG=XIMX95LPD5EVK19_6400mbps_train_timing_a1 all
    $ cp build/mx95lp5/ddr/oei-m33-ddr.bin $(srctree)
 
-   $ make board=mx95lp5 oei=tcm DEBUG=1
+   $ make board=mx95lp5 oei=tcm DEBUG=1 r=A0 all
    $ cp build/mx95lp5/tcm/oei-m33-tcm.bin $(srctree)
+
+i.MX95 B0 silicon version on 19x19 LPDDR5 EVK
+
+.. code-block:: bash
+
+   $ make board=mx95lp5 oei=ddr DEBUG=1 r=B0 all
+   $ cp build/mx95lp5/ddr/oei-m33-ddr.bin $(srctree)
+
+i.MX95 B0 silicon version on 15x15 LPDDR4X EVK
+
+.. code-block:: bash
+
+   $ make board=mx95lp4x-15 oei=ddr DEBUG=1 r=B0 all
+   $ cp build/mx95lp4x-15/ddr/oei-m33-ddr.bin $(srctree)
 
 Get and Build System Manager Image
 --------------------------------------
@@ -69,8 +100,8 @@ branch: master
 .. code-block:: bash
 
    $ sudo apt -y install make gcc g++-multilib srecord
-   $ wget https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
-   $ tar xvf arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz
+   $ wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+   $ tar xvf arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
    $ export TOOLS=$PWD
    $ git clone -b master https://github.com/nxp-imx/imx-sm.git
    $ cd imx-sm
@@ -82,13 +113,14 @@ Get and Build the ARM Trusted Firmware
 
 Note: srctree is U-Boot source directory
 Get ATF from: https://github.com/nxp-imx/imx-atf/
-branch: lf_v2.10
+branch: lf_v2.12
 
 .. code-block:: bash
 
    $ export CROSS_COMPILE=aarch64-poky-linux-
    $ unset LDFLAGS
-   $ git clone -b lf_v2.10 https://github.com/nxp-imx/imx-atf.git
+   $ unset AS
+   $ git clone -b lf_v2.12 https://github.com/nxp-imx/imx-atf.git
    $ cd imx-atf
    $ make PLAT=imx95 bl31
    $ cp build/imx95/release/bl31.bin $(srctree)
@@ -96,13 +128,31 @@ branch: lf_v2.10
 Build the Bootloader Image
 --------------------------
 
+i.MX95 A0 silicon version on 19x19 LPDDR5 EVK
+
+.. code-block:: bash
+
+   $ export CROSS_COMPILE=aarch64-poky-linux-
+   $ make imx95_a0_19x19_evk_defconfig
+   $ make
+
+i.MX95 B0 silicon version on 19x19 LPDDR5 EVK
+
 .. code-block:: bash
 
    $ export CROSS_COMPILE=aarch64-poky-linux-
    $ make imx95_19x19_evk_defconfig
    $ make
 
-Copy imx-boot-imx95.bin to the MicroSD card:
+i.MX95 B0 silicon version on 15x15 LPDDR4X EVK
+
+.. code-block:: bash
+
+   $ export CROSS_COMPILE=aarch64-poky-linux-
+   $ make imx95_15x15_evk_defconfig
+   $ make
+
+Copy flash.bin to the MicroSD card:
 
 .. code-block:: bash
 

@@ -20,7 +20,6 @@
 #define SERVER_NAME_SIZE 254
 #define HTTP_PORT_DEFAULT 80
 #define HTTPS_PORT_DEFAULT 443
-#define PROGRESS_PRINT_STEP_BYTES (100 * 1024)
 
 enum done_state {
 	NOT_DONE = 0,
@@ -37,6 +36,8 @@ struct wget_ctx {
 	ulong size;
 	ulong prevsize;
 	ulong start_time;
+	ulong content_len;
+	ulong hash_count;
 	enum done_state done;
 };
 
@@ -152,6 +153,7 @@ static int store_block(struct wget_ctx *ctx, void *src, u16_t len)
 {
 	ulong store_addr = ctx->daddr;
 	uchar *ptr;
+	ulong pos;
 
 	/* Avoid overflow */
 	if (wget_info->buffer_size && wget_info->buffer_size < ctx->size + len)
@@ -174,10 +176,15 @@ static int store_block(struct wget_ctx *ctx, void *src, u16_t len)
 
 	ctx->daddr += len;
 	ctx->size += len;
-	if (ctx->size - ctx->prevsize > PROGRESS_PRINT_STEP_BYTES) {
-		if (!wget_info->silent)
-			printf("#");
-		ctx->prevsize = ctx->size;
+
+	if (wget_info->silent)
+		return 0;
+
+	pos = clamp(ctx->size, 0UL, ctx->content_len);
+
+	while (ctx->hash_count < pos * 50 / ctx->content_len) {
+		putc('#');
+		ctx->hash_count++;
 	}
 
 	return 0;
@@ -234,13 +241,19 @@ static void httpc_result_cb(void *arg, httpc_result_t httpc_result,
 		return;
 	}
 
+	/* Print hash marks for the last packet received */
+	if (!wget_info->silent) {
+		while (ctx->hash_count < 49) {
+			putc('#');
+			ctx->hash_count++;
+		}
+	}
+
 	elapsed = get_timer(ctx->start_time);
 	if (!elapsed)
 		elapsed = 1;
 	if (!wget_info->silent) {
-		if (rx_content_len > PROGRESS_PRINT_STEP_BYTES)
-			printf("\n");
-		printf("%u bytes transferred in %lu ms (", rx_content_len,
+		printf("\n%u bytes transferred in %lu ms (", rx_content_len,
 		       elapsed);
 		print_size(rx_content_len / elapsed * 1000, "/s)\n");
 		printf("Bytes transferred = %lu (%lx hex)\n", ctx->size,
@@ -263,10 +276,14 @@ static void httpc_result_cb(void *arg, httpc_result_t httpc_result,
 static err_t httpc_headers_done_cb(httpc_state_t *connection, void *arg, struct pbuf *hdr,
 				   u16_t hdr_len, u32_t content_len)
 {
+	struct wget_ctx *ctx = arg;
+
 	wget_lwip_fill_info(hdr, hdr_len, content_len);
 
 	if (wget_info->check_buffer_size && (ulong)content_len > wget_info->buffer_size)
 		return ERR_BUF;
+
+	ctx->content_len = content_len;
 
 	return ERR_OK;
 }
@@ -294,6 +311,8 @@ int wget_do_request(ulong dst_addr, char *uri)
 	ctx.size = 0;
 	ctx.prevsize = 0;
 	ctx.start_time = 0;
+	ctx.content_len = 0;
+	ctx.hash_count = 0;
 
 	if (parse_url(uri, ctx.server_name, &ctx.port, &path, &is_https))
 		return CMD_RET_USAGE;

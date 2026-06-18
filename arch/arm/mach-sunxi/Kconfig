@@ -118,6 +118,13 @@ config DRAM_SUNXI_MR14
 	help
 	  MR14 value from vendor DRAM settings.
 
+config DRAM_SUNXI_MR22
+	hex "DRAM MR22 parameter"
+	depends on DRAM_SUN50I_A133
+	default 0x0
+	help
+	  MR22 value from vendor DRAM settings.
+
 config DRAM_SUNXI_TPR0
 	hex "DRAM TPR0 parameter"
 	default 0x0
@@ -144,7 +151,6 @@ config DRAM_SUNXI_TPR3
 
 config DRAM_SUNXI_TPR6
 	hex "DRAM TPR6 parameter"
-	default 0x3300c080
 	help
 	  TPR6 value from vendor DRAM settings.
 
@@ -475,6 +481,7 @@ config MACH_SUN8I_R528
 	select MMC_SUNXI_HAS_NEW_MODE
 	select SUPPORT_SPL
 	select DRAM_SUN20I_D1
+	imply OF_UPSTREAM
 
 config MACH_SUN8I_V3S
 	bool "sun8i (Allwinner V3/V3s/S3/S3L)"
@@ -487,6 +494,7 @@ config MACH_SUN8I_V3S
 	select SUNXI_DRAM_DW_16BIT
 	select SUPPORT_SPL
 	select ARMV7_BOOT_SEC_DEFAULT if OLD_SUNXI_KERNEL_COMPAT
+	imply OF_UPSTREAM
 
 config MACH_SUN9I
 	bool "sun9i (Allwinner A80)"
@@ -497,6 +505,7 @@ config MACH_SUN9I
 	select SUN6I_PRCM
 	select SUNXI_GEN_SUN6I
 	select SUPPORT_SPL
+	imply OF_UPSTREAM
 
 config MACH_SUN50I
 	bool "sun50i (Allwinner A64)"
@@ -718,9 +727,9 @@ config DRAM_CLK
 	int "sunxi dram clock speed"
 	default 792 if MACH_SUN9I
 	default 648 if MACH_SUN8I_R40
-	default 312 if MACH_SUN6I || MACH_SUN8I
 	default 360 if MACH_SUN4I || MACH_SUN5I || MACH_SUN7I || \
 		       MACH_SUN8I_V3S
+	default 312 if MACH_SUN6I || MACH_SUN8I
 	default 672 if MACH_SUN50I
 	default 744 if MACH_SUN50I_H6
 	default 720 if MACH_SUN50I_H616 || MACH_SUN50I_A133
@@ -1228,6 +1237,26 @@ config CHIP_DIP_SCAN
 	select W1_EEPROM
 	select W1_EEPROM_DS24XXX
 	select CMD_EXTENSION
+
+config SPL_SUNXI_LED_STATUS
+	bool "Control GPIO status LED within SPL"
+	depends on SPL_GPIO && SUNXI_GPIO
+
+if SPL_SUNXI_LED_STATUS
+
+config SPL_SUNXI_LED_STATUS_GPIO
+	int "GPIO number for GPIO status LED"
+	help
+	  GPIO number for the GPIO controlling the GPIO status LED in SPL.
+
+config SPL_SUNXI_LED_STATUS_ACTIVE_HIGH
+	bool "GPIO status LED is active high"
+	default y
+	help
+	  Whether the GPIO of the status LED must be set high or low to turn
+	  the LED on.
+
+endif # SPL_SUNXI_LED_STATUS
 
 source "board/sunxi/Kconfig"
 

@@ -6,7 +6,6 @@
  */
 
 #include <init.h>
-#include <asm/global_data.h>
 #include <asm/io.h>
 #include <hang.h>
 #include <spl.h>
@@ -19,9 +18,7 @@
 #include <wdt.h>
 #include <dm/uclass.h>
 
-DECLARE_GLOBAL_DATA_PTR;
-
-u32 reset_flag(void)
+u32 reset_flag(u32 flag)
 {
 	/* Check rstmgr.stat for warm reset status */
 	u32 status = readl(SOCFPGA_RSTMGR_ADDRESS);

@@ -10,7 +10,6 @@
 
 #include <clk.h>
 #include <dm.h>
-#include <asm/global_data.h>
 #include <dm/device_compat.h>
 #include <dm/lists.h>
 #include <generic-phy.h>
@@ -20,8 +19,6 @@
 #include <asm/io.h>
 #include <linux/iopoll.h>
 #include <asm/arch-rockchip/clock.h>
-
-DECLARE_GLOBAL_DATA_PTR;
 
 #define usleep_range(a, b) udelay((b))
 
@@ -788,7 +785,7 @@ U_BOOT_DRIVER(rockchip_tcphy_usb3_port) = {
 
 U_BOOT_DRIVER(rockchip_typec_phy) = {
 	.name	= "rockchip_typec_phy",
-	.id	= UCLASS_PHY,
+	.id	= UCLASS_NOP,
 	.of_match = rockchip_typec_phy_ids,
 	.probe = rockchip_tcphy_probe,
 	.bind = rockchip_tcphy_bind,
