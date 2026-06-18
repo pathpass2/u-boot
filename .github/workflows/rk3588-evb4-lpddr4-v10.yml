@@ -1,0 +1,77 @@
+name: Build rk3588-evb4-lpddr4-v10-u-boot
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  SRC_PATH: ${{ github.workspace }}
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_tag }}
+          submodules: true
+          fetch-depth: 0
+          # 关键：保留文件权限
+          persist-credentials: false
+
+      - name: Fix Script Permissions
+        run: |
+          chmod +x arch/arm/mach-rockchip/make_fit_atf.py
+                        
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            device-tree-compiler \
+            u-boot-tools \
+            libssl-dev \
+            bc \
+            flex \
+            bison \
+            libncurses-dev \
+            initramfs-tools \
+            busybox-static  \
+            python3-pyelftools  \
+            libgnutls28-dev
+          sudo -E apt-get -y install $(curl -fsSL https://tinyurl.com/ubuntu2204-build-armbian)
+
+      - name: Setup ARM Toolchain
+        run: |
+          wget https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+          tar xf arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz
+          echo "$(pwd)/arm-gnu-toolchain-14.2.rel1-x86_64-aarch64-none-linux-gnu/bin" >> $GITHUB_PATH
+          
+      - name: get u-boot_version
+        run:  |
+          echo "u-boot_version=$(make -s ubootversion)" >> $GITHUB_ENV
+          echo "release_tag=rk3588-evb4-lpddr4-v10-v$make -s ubootversion)" >> $GITHUB_ENV
+          
+      - name: build u-boot.itb  idbloader.img
+        run: |
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu- lckfb-tspi-rk3566_defconfig
+          make ARCH=arm CROSS_COMPILE=aarch64-none-linux-gnu-  BL31=./rk3588-atf-bl31 ROCKCHIP_TPL=./rkbin/bin/rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.11.bin -j$(nproc)
+          cat spl/u-boot-spl.bin >> idbloader.img
+
+      - name: Upload u-boot.itb、idbloader.img
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.release_tag }}
+          name: "Master u-boot ${{ env.u-boot_version }}"          
+          artifacts: |
+            u-boot.itb
+            idbloader.img
+          body: |
+            适用于rk3588-evb4-lpddr4-v10的主线u-boot
+            tag：  ${{ github.event.inputs.target_tag }}
+            u-boot version: ${{ env.u-boot_version }}
+          draft: false
+          prerelease: false
+          allowUpdates: true
+          replaceArtifacts: false          
