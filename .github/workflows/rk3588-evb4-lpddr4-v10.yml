@@ -89,7 +89,8 @@ jobs:
             - **u-boot 版本**: ${{ env.u-boot_version }}
             - **构建时间**: ${{ env.build_date }}
             
-
+            ### DDR 固件
+            - 使用 `rk3566_ddr_1056MHz_v1.16.bin`
           draft: false
           prerelease: false
           allowUpdates: true
