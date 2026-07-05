@@ -68,7 +68,7 @@ jobs:
             BL31=./rk3588-atf-bl31 \
             ROCKCHIP_TPL=./rkbin/bin/rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.11.bin \
             -j$(nproc)
-          cat spl/u-boot-spl.bin > idbloader.img
+          cat spl/u-boot-spl.bin >> idbloader.img
           
           # 重命名产物以便更好识别
           cp u-boot.itb u-boot-${release_tag}.itb
