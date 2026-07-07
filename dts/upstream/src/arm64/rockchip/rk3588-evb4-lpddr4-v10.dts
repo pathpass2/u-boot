@@ -742,3 +742,4 @@
 		remote-endpoint = <&hdmi0_in_vp0>;
 	};
 };
+
