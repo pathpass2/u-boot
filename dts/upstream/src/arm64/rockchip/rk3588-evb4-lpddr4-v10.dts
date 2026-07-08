@@ -27,6 +27,7 @@
 	hdmi0-con {
 		compatible = "hdmi-connector";
 		type = "a";
+		hdmi-pwr-supply = <&vcc_3v3_s0>;
 
 		port {
 			hdmi0_con_in: endpoint {
@@ -38,14 +39,24 @@
 	leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&led_rgb_b>, <&led_rgb_r>;
 
-		led {
+		led_blue: led-0 {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "heartbeat";
+			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
 		};
+		
+		led_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+
 	};
 
 	vcc_1v1_nldo_s3: regulator-1v1 {
@@ -58,7 +69,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-
+	/* PCIe 3.3V电源 */
 	pcie_3v3: regulator-3v3-pcie {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -71,7 +82,7 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-
+	/* Type-C VBUS电源 */
 	vbus5v0_typec: regulator-vbus5v0-typec {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -151,6 +162,8 @@
 		     &hdmim0_tx0_scl &hdmim0_tx0_sda &hdmi0_tx_on_h>;
 	pinctrl-names = "default";
 	status = "okay";
+	force-hpd = <1>;
+	rockchip,output-mode = "hdmi";
 };
 
 &hdmi0_in {
@@ -298,7 +311,7 @@
 	};
 };
 
-
+/* PCIe2.0 - 保留，删除WiFi */
 &pcie2x1l0 {
 	compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
 	phys = <&combphy1_ps PHY_TYPE_PCIE>;
@@ -310,7 +323,7 @@
 	max-link-speed = <2>;
 	status = "okay";
 
-
+	/* PCIe桥 - 删除WiFi子节点 */
 	pcie@0,0 {
 		reg = <0x200000 0 0 0 0>;
 		#address-cells = <3>;
@@ -318,6 +331,7 @@
 		ranges;
 		device_type = "pci";
 		bus-range = <0x20 0x2f>;
+		/* WiFi节点已删除 */
 	};
 };
 
@@ -339,8 +353,12 @@
 	};
 
 	leds {
-		led_pins: led-pins {
-			rockchip,pins = <3 RK_PD4 RK_FUNC_GPIO &pcfg_pull_none>;
+		led_rgb_b: led-rgb-b {
+			rockchip,pins = <1 22 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		led_rgb_r: led-rgb-r {
+			rockchip,pins = <4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -791,6 +809,7 @@
 };
 
 &vop {
+	rockchip,output = "hdmi";
 	status = "okay";
 };
 
