@@ -91,7 +91,7 @@ jobs:
             - **构建时间**: ${{ env.build_date }}
             
             ### DDR 固件
-            - 使用 `rk3566_ddr_1056MHz_v1.16.bin`
+            - 使用 `rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.11.bin`
           draft: false
           prerelease: false
           allowUpdates: true
