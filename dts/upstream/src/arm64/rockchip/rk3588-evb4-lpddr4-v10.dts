@@ -17,6 +17,7 @@
 	aliases {
 		ethernet0 = &gmac1;
 		mmc0 = &sdhci;
+		mmc1 = &sdmmc;
 		serial2 = &uart2;
 	};
 
@@ -56,7 +57,6 @@
 			default-state = "on";
 			linux,default-trigger = "none";
 		};
-
 	};
 
 	vcc_1v1_nldo_s3: regulator-1v1 {
@@ -69,11 +69,10 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	/* PCIe 3.3V电源 */
 	pcie_3v3: regulator-3v3-pcie {
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpios = <&gpio4 RK_PA1 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio0 RK_PC4 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&pcie2_0_pow>;
 		pinctrl-names = "default";
 		regulator-name = "pcie_3v3";
@@ -82,7 +81,6 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
-	/* Type-C VBUS电源 */
 	vbus5v0_typec: regulator-vbus5v0-typec {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -104,6 +102,20 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
+	};
+
+	vcc5v0_host: regulator-vcc5v0-host {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_host";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_host_en>;
+		vin-supply = <&vcc5v0_sys>;
+		regulator-always-on;
+		regulator-boot-on;
 	};
 };
 
@@ -238,7 +250,6 @@
 		wakeup-source;
 	};
 
-	/* Type-C控制器 - FUSB302 */
 	usbc0: usb-typec@22 {
 		compatible = "fcs,fusb302";
 		reg = <0x22>;
@@ -311,7 +322,6 @@
 	};
 };
 
-/* PCIe2.0 - 保留，删除WiFi */
 &pcie2x1l0 {
 	compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
 	phys = <&combphy1_ps PHY_TYPE_PCIE>;
@@ -322,17 +332,6 @@
 	num-lanes = <1>;
 	max-link-speed = <2>;
 	status = "okay";
-
-	/* PCIe桥 - 删除WiFi子节点 */
-	pcie@0,0 {
-		reg = <0x200000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-		device_type = "pci";
-		bus-range = <0x20 0x2f>;
-		/* WiFi节点已删除 */
-	};
 };
 
 &pd_gpu {
@@ -372,7 +371,7 @@
 		};
 
 		pcie2_0_pow: pcie2-0-pow {
-			rockchip,pins = <4 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
+			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -389,6 +388,12 @@
 
 		usbc0_int: usbc0-int {
 			rockchip,pins = <0 RK_PB3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	usb {
+		vcc5v0_host_en: vcc5v0-host3-en {
+			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
@@ -408,7 +413,6 @@
 	status = "okay";
 };
 
-
 &sdmmc {
 	bus-width = <4>;
 	cap-mmc-highspeed;
@@ -421,7 +425,6 @@
 	vqmmc-supply = <&vccio_sd_s0>;
 	status = "okay";
 };
-
 
 &spi2 {
 	assigned-clocks = <&cru CLK_SPI2>;
@@ -758,23 +761,68 @@
 	status = "okay";
 };
 
-&u2phy1 {
+&u2phy2 {
 	status = "okay";
 };
 
-&u2phy1_otg {
-	phy-supply = <&vcc5v0_sys>;
+&u2phy2_host {
+	phy-supply = <&vcc5v0_host>;
 	status = "okay";
 };
 
-&uart2 {
-	pinctrl-0 = <&uart2m0_xfer>;
-	pinctrl-names = "default";
+&u2phy3 {
 	status = "okay";
 };
 
-&uart9 {
+&u2phy3_host {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&usb_host0_xhci {
+	dr_mode = "otg";
+	usb-role-switch;
+	phys = <&u2phy0_otg>, <&usbdp_phy0 PHY_TYPE_USB3>;
+	phy-names = "usb2-phy", "usb3-phy";
+	status = "okay";
+
+	port {
+		dwc3_0_role_switch: endpoint {
+			remote-endpoint = <&usbc0_role_sw>;
+		};
+	};
+};
+
+&usb_host1_xhci {
+	dr_mode = "host";
+	phys = <&u2phy2_host>, <&combphy2_psu PHY_TYPE_USB3>;
+	phy-names = "usb2-phy", "usb3-phy";
+	snps,dis_enblslpm_quirk;
+	snps,dis-u2-freeclk-exists-quirk;
+	snps,dis-del-phy-power-chg-quirk;
+	snps,dis-tx-ipgap-linecheck-quirk;
+	snps,dis_rxdet_inp3_quirk;
+	status = "okay";
+};
+
+&usb_host1_ehci {
 	status = "disabled";
+};
+
+&usb_host1_ohci {
+	phys = <&u2phy3_host>;
+	phy-names = "usb";
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	phys = <&u2phy3_host>;
+	phy-names = "usb";
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
 };
 
 &usbdp_phy0 {
@@ -799,23 +847,12 @@
 };
 
 &usbdp_phy1 {
-	status = "okay";
+	status = "disabled";
 };
 
-&usb_host0_xhci {
-	dr_mode = "otg";
-	usb-role-switch;
-	status = "okay";
-
-	port {
-		dwc3_0_role_switch: endpoint {
-			remote-endpoint = <&usbc0_role_sw>;
-		};
-	};
-};
-
-&usb_host1_xhci {
-	dr_mode = "host";
+&uart2 {
+	pinctrl-0 = <&uart2m0_xfer>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
