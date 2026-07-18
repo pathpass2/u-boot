@@ -38,26 +38,12 @@
 	};
 
 	leds {
-		compatible = "gpio-leds";
-		pinctrl-names = "default";
-		pinctrl-0 = <&led_rgb_b>, <&led_rgb_r>;
-
-		led_blue: led-0 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-			linux,default-trigger = "none";
-		};
-		
-		led_red: led-1 {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS;
-			gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-			linux,default-trigger = "none";
-		};
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_STATUS;
+		gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "default-on";
 	};
+
 
 	vcc_1v1_nldo_s3: regulator-1v1 {
 		compatible = "regulator-fixed";
@@ -327,7 +313,7 @@
 	phys = <&combphy1_ps PHY_TYPE_PCIE>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie2_0_rst>, <&pcie2_0_clkreq>;
-	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
 	vpcie3v3-supply = <&pcie_3v3>;
 	num-lanes = <1>;
 	max-link-speed = <2>;
@@ -352,10 +338,6 @@
 	};
 
 	leds {
-		led_rgb_b: led-rgb-b {
-			rockchip,pins = <1 22 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
 		led_rgb_r: led-rgb-r {
 			rockchip,pins = <4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
@@ -871,3 +853,4 @@
 		remote-endpoint = <&hdmi0_in_vp0>;
 	};
 };
+
